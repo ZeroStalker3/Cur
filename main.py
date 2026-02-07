@@ -46,7 +46,7 @@ class ViolationDatabaseApp(QMainWindow):
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
-            "ID", "Марка", "Номер", "Дата", "ФИО", "Тип нарушения", "Квитанция", "Сумма"
+            "Марка", "Номер", "Дата", "ФИО", "Тип нарушения", "Квитанция", "Сумма"
         ])
         
         # Настройка таблицы
@@ -87,12 +87,17 @@ class ViolationDatabaseApp(QMainWindow):
         self.btn_sort = QPushButton("Сортировать")
         self.btn_sort.setStyleSheet("background-color: #34495e; color: white; border-radius: 5px;")
         self.btn_sort.clicked.connect(self.sort_records)
-        
+
+        self.btn_edit = QPushButton("Изменить")
+        self.btn_edit.setStyleSheet("background-color: #34495e; color: white; border-radius: 5px;")
+        self.btn_edit.clicked.connect(self.edit_record)
+
         btn_layout.addWidget(self.btn_add)
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_search)
         btn_layout.addWidget(self.btn_sort)
-        
+        btn_layout.addWidget(self.btn_edit)
+
         # Создание группы для фильтрации
         filter_group = QGroupBox("Фильтрация")
         filter_group.setStyleSheet("color: black")
@@ -164,7 +169,7 @@ class ViolationDatabaseApp(QMainWindow):
             conn.close()
     
     def load_data(self):
-        """Загрузка данных в таблицу (с логированием)"""
+        """Загрузка данных в таблицу"""
         try:
             logging.info("Загрузка данных из БД")
             conn = sqlite3.connect('violations.db')
@@ -179,7 +184,7 @@ class ViolationDatabaseApp(QMainWindow):
             
             # Заполняем таблицу
             for i, row in enumerate(rows):
-                for j, col in enumerate(row):
+                for j, col in enumerate(row[1:]):
                     # Отображаем ID в первом столбце
                     self.table.setItem(i, j, QTableWidgetItem(str(col)))
             
@@ -267,7 +272,7 @@ class ViolationDatabaseApp(QMainWindow):
             logging.info("Запись успешно добавлена")
     
     def save_to_db(self, brand, car_num, date, name, violation_type, invoice, amount):
-        """Сохранение данных в SQLite (с логированием)"""
+        """Сохранение данных в SQLite"""
         try:
             logging.info(f"Попытка сохранения записи: {brand} {car_num} {date}")
             conn = sqlite3.connect('violations.db', timeout=5)
@@ -372,7 +377,7 @@ class ViolationDatabaseApp(QMainWindow):
         self.table.setRowCount(0)
         for i, row in enumerate(results):
             self.table.insertRow(i)
-            for j, col in enumerate(row):
+            for j, col in enumerate(row[1:]):
                 self.table.setItem(i, j, QTableWidgetItem(str(col)))
     
     def sort_records(self):
@@ -395,7 +400,7 @@ class ViolationDatabaseApp(QMainWindow):
             # Обновление таблицы
             self.table.setRowCount(len(rows))
             for i, row in enumerate(rows):
-                for j, col in enumerate(row):
+                for j, col in enumerate(row[1:]):
                     self.table.setItem(i, j, QTableWidgetItem(str(col)))
             logging.info("Таблица отсортирована по дате")
         except sqlite3.Error as e:
