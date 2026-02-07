@@ -175,7 +175,7 @@ class ViolationDatabaseApp(QMainWindow):
             
             # Устанавливаем количество строк и столбцов
             self.table.setRowCount(len(rows))
-            self.table.setColumnCount(8)
+            self.table.setColumnCount(7)
             
             # Заполняем таблицу
             for i, row in enumerate(rows):
