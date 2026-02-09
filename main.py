@@ -20,6 +20,7 @@ logging.basicConfig(
 
 class ViolationDatabaseApp(QMainWindow):
     def __init__(self):
+
         super().__init__()
         self.setWindowTitle("Регистрация нарушителей ПДД")
         self.setGeometry(100, 100, 1000, 600)
@@ -303,6 +304,7 @@ class ViolationDatabaseApp(QMainWindow):
             ''', (brand, car_num, date, name, violation_type, invoice, amount))
             conn.commit()
             logging.info("Запись успешно сохранена")
+
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e):
                 logging.error("Ошибка: База данных заблокирована")
@@ -310,15 +312,19 @@ class ViolationDatabaseApp(QMainWindow):
             else:
                 logging.error(f"Ошибка при сохранении записи: {str(e)}")
                 QMessageBox.critical(self, "Ошибка", f"Не удалось сохранить запись: {str(e)}")
+
         except sqlite3.IntegrityError as e:
             logging.error(f"Ошибка уникальности: {str(e)}")
             QMessageBox.critical(self, "Ошибка", "Номер квитанции должен быть уникальным")
+
         except ValueError as e:
             logging.error(f"Ошибка валидации: {str(e)}")
             QMessageBox.critical(self, "Ошибка", "Сумма должна быть числом")
+        
         except Exception as e:
             logging.exception("Неожиданная ошибка при сохранении")
             QMessageBox.critical(self, "Ошибка", f"Произошла ошибка: {str(e)}")
+            
         finally:
             if conn:
                 conn.close()
