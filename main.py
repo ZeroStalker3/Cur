@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize, QRegularExpression
 from PyQt6.QtGui import QFont, QPalette, QColor, QBrush, QPen, QLinearGradient, QRegularExpressionValidator
 
+
 # Настройка логирования
 logging.basicConfig(
     filename='Log_app.log',
@@ -198,7 +199,11 @@ class ViolationDatabaseApp(QMainWindow):
             QMessageBox.critical(self, "Ошибка", f"Неизвестная ошибка: {str(e)}")
     
     def is_valid_date(self, date_str):
-        """Проверка корректности формата даты"""
+        
+        """
+        Проверка корректности формата даты
+        """
+
         try:
             logging.debug(f"Проверка даты: {date_str}")
             datetime.strptime(date_str, "%Y-%m-%d")
@@ -257,7 +262,6 @@ class ViolationDatabaseApp(QMainWindow):
         
         dialog.setLayout(layout)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            # Валидация данных
             brand = fields[0][1].text().strip()
             car_num = fields[1][1].text().strip()
             date = fields[2][1].text().strip()
@@ -271,13 +275,11 @@ class ViolationDatabaseApp(QMainWindow):
                 logging.warning("Неверный формат даты")
                 QMessageBox.warning(self, "Ошибка", "Дата должна быть в формате YYYY-MM-DD")
                 return
-            
+
             # Сохранение в БД
-            logging.info(f"Сохранение записи: {brand} {car_num} {date}")
             self.save_to_db(brand, car_num, date, fields[3][1].text(), fields[4][1].text(), 
                             fields[5][1].text(), float(fields[6][1].text()))
             self.load_data()  # Обновляем таблицу
-            logging.info("Запись успешно добавлена")
     
     def save_to_db(self, brand, car_num, date, name, violation_type, invoice, amount):
         
@@ -304,6 +306,7 @@ class ViolationDatabaseApp(QMainWindow):
             ''', (brand, car_num, date, name, violation_type, invoice, amount))
             conn.commit()
             logging.info("Запись успешно сохранена")
+            QMessageBox.information(self, "Успех", "Запись успешно добавлена")
 
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e):
@@ -358,9 +361,11 @@ class ViolationDatabaseApp(QMainWindow):
             self.table.removeRow(row_index)
             QMessageBox.information(self, "Успех", "Запись удалена")
             logging.info("Запись успешно удалена")
+
         except sqlite3.Error as e:
             logging.error(f"Ошибка при удалении: {str(e)}")
             QMessageBox.critical(self, "Ошибка", "Не удалось удалить запись")
+            
         except Exception as e:
             logging.exception("Ошибка при удалении")
             QMessageBox.critical(self, "Ошибка", "Ошибка удаления")
