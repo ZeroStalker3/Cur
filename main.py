@@ -48,9 +48,10 @@ class ViolationDatabaseApp(QMainWindow):
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
+            "Id",
             "Марка", "Номер", "Дата", "ФИО", "Тип нарушения", "Квитанция", "Сумма"
         ])
-        
+        self.table.hideColumn(0)
         # Настройка таблицы
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -169,9 +170,13 @@ class ViolationDatabaseApp(QMainWindow):
             QMessageBox.critical(self, "Ошибка", f"Не удалось инициализировать БД: {str(e)}")
         finally:
             conn.close()
-    
+
     def load_data(self):
-        """Загрузка данных в таблицу"""
+        
+        """
+        Загрузка данных в таблицу
+        """
+
         try:
             logging.info("Загрузка данных из БД")
             conn = sqlite3.connect('violations.db')
@@ -180,15 +185,14 @@ class ViolationDatabaseApp(QMainWindow):
             rows = c.fetchall()
             logging.info(f"Найдено {len(rows)} записей")
             
-            # Устанавливаем количество строк и столбцов
             self.table.setRowCount(len(rows))
-            self.table.setColumnCount(7)
             
-            # Заполняем таблицу
             for i, row in enumerate(rows):
+                # Добавляем ID в скрытый первый столбец
+                self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
+                # Остальные данные в видимые столбцы
                 for j, col in enumerate(row[1:]):
-                    # Отображаем ID в первом столбце
-                    self.table.setItem(i, j, QTableWidgetItem(str(col)))
+                    self.table.setItem(i, j + 1, QTableWidgetItem(str(col)))
             
             conn.close()
         except sqlite3.Error as e:
@@ -265,7 +269,10 @@ class ViolationDatabaseApp(QMainWindow):
             brand = fields[0][1].text().strip()
             car_num = fields[1][1].text().strip()
             date = fields[2][1].text().strip()
-            
+
+            data_now = datetime.today().date()
+            db_date = datetime.strptime(date, "%Y-%m-%d").date() 
+
             if not brand or not car_num or not date:
                 logging.warning("Не заполнены обязательные поля")
                 QMessageBox.warning(self, "Ошибка", "Заполните обязательные поля")
@@ -278,7 +285,7 @@ class ViolationDatabaseApp(QMainWindow):
 
             # Сохранение в БД
             self.save_to_db(brand, car_num, date, fields[3][1].text(), fields[4][1].text(), 
-                            fields[5][1].text(), float(fields[6][1].text()))
+                                fields[5][1].text(), float(fields[6][1].text()))
             self.load_data()  # Обновляем таблицу
     
     def save_to_db(self, brand, car_num, date, name, violation_type, invoice, amount):
@@ -346,9 +353,8 @@ class ViolationDatabaseApp(QMainWindow):
             QMessageBox.warning(self, "Ошибка", "Выберите строку для удаления")
             return
             
-        # Получаем ID выбранной строки
         row_index = self.table.selectionModel().selectedRows()[0].row()
-        selected_id = self.table.item(row_index, 0).text()
+        selected_id = self.table.item(row_index, 0).text()  # ID из скрытого столбца
         
         try:
             logging.info(f"Удаление записи с ID: {selected_id}")
@@ -423,13 +429,14 @@ class ViolationDatabaseApp(QMainWindow):
             logging.warning("Нет результатов поиска")
             QMessageBox.warning(self, "Результаты", "Не найдено записей")
             return
-        
+
         logging.info(f"Найдено {len(results)} записей")
         self.table.setRowCount(0)
         for i, row in enumerate(results):
             self.table.insertRow(i)
+            self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
             for j, col in enumerate(row[1:]):
-                self.table.setItem(i, j, QTableWidgetItem(str(col)))
+                self.table.setItem(i, j + 1, QTableWidgetItem(str(col)))
     
     def sort_records(self):
         
@@ -455,9 +462,13 @@ class ViolationDatabaseApp(QMainWindow):
             
             # Обновление таблицы
             self.table.setRowCount(len(rows))
+            self.table.setRowCount(len(rows))
             for i, row in enumerate(rows):
+                # Добавляем ID в скрытый первый столбец
+                self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
+                # Остальные данные в видимые столбцы
                 for j, col in enumerate(row[1:]):
-                    self.table.setItem(i, j, QTableWidgetItem(str(col)))
+                    self.table.setItem(i, j + 1, QTableWidgetItem(str(col)))
             logging.info("Таблица отсортирована по дате")
         except sqlite3.Error as e:
             logging.error(f"Ошибка при сортировке: {str(e)}")
@@ -566,14 +577,15 @@ class ViolationDatabaseApp(QMainWindow):
         :return: Словарь с данными о нарушении ПДД
         """
 
+        # ID из скрытого столбца
+        record_id = self.table.item(row_index, 0).text()
+        
+        # Получаем полные данные из БД по ID
         conn = sqlite3.connect('violations.db')
         c = conn.cursor()
-
-        c.execute("SELECT * FROM violations")
-        records = c.fetchall()
+        c.execute("SELECT * FROM violations WHERE id = ?", (record_id,))
+        record = c.fetchone()
         conn.close()
-
-        record = records[row_index]
 
         return {
             'id': record[0],
