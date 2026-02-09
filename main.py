@@ -7,8 +7,8 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem, QHeaderView, QPushButton, QLineEdit, QComboBox, QGridLayout,
     QGroupBox, QLabel, QSizePolicy, QFileDialog, QMessageBox, QDialog
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QPalette, QColor, QBrush, QPen, QLinearGradient
+from PyQt6.QtCore import Qt, QSize, QRegularExpression
+from PyQt6.QtGui import QFont, QPalette, QColor, QBrush, QPen, QLinearGradient, QRegularExpressionValidator
 
 # Настройка логирования
 logging.basicConfig(
@@ -89,7 +89,7 @@ class ViolationDatabaseApp(QMainWindow):
         self.btn_sort.clicked.connect(self.sort_records)
 
         self.btn_edit = QPushButton("Изменить")
-        self.btn_edit.setStyleSheet("background-color: #34495e; color: white; border-radius: 5px;")
+        self.btn_edit.setStyleSheet("background-color: #27ae60; color: white; border-radius: 5px;")
         self.btn_edit.clicked.connect(self.edit_record)
 
         btn_layout.addWidget(self.btn_add)
@@ -207,7 +207,14 @@ class ViolationDatabaseApp(QMainWindow):
             return False
     
     def add_record(self):
-        """Добавление нарушения через форму в PyQt6"""
+       
+        """
+        Открывает диалоговое окно для добавления нового нарушения ПДД.
+
+        Позволяет пользователю ввести данные через форму, выполняет базовую
+        валидацию обязательных полей и инициирует сохранение записи в базе данных.
+        """
+
         dialog = QDialog(self)
         dialog.setWindowTitle("Добавить нарушение")
         layout = QVBoxLayout()
@@ -272,7 +279,19 @@ class ViolationDatabaseApp(QMainWindow):
             logging.info("Запись успешно добавлена")
     
     def save_to_db(self, brand, car_num, date, name, violation_type, invoice, amount):
-        """Сохранение данных в SQLite"""
+        
+        """
+        Сохраняет данные о нарушении ПДД в базе данных SQLite.
+
+        :param brand: Марка автомобиля
+        :param car_num: Государственный номер автомобиля
+        :param date: Дата нарушения в формате YYYY-MM-DD
+        :param name: ФИО нарушителя
+        :param violation_type: Тип нарушения ПДД
+        :param invoice: Номер квитанции
+        :param amount: Сумма штрафа
+        """
+
         try:
             logging.info(f"Попытка сохранения записи: {brand} {car_num} {date}")
             conn = sqlite3.connect('violations.db', timeout=5)
@@ -305,7 +324,14 @@ class ViolationDatabaseApp(QMainWindow):
                 conn.close()
     
     def delete_record(self):
-        """Удаление через выбор строки в таблице"""
+        
+        """
+        Удаляет выбранную пользователем запись из базы данных и таблицы интерфейса.
+
+        Получает идентификатор записи из выделенной строки таблицы
+        и выполняет удаление из базы данных SQLite.
+        """
+
         if not self.table.selectionModel().hasSelection():
             logging.warning("Попытка удаления без выбора строки")
             QMessageBox.warning(self, "Ошибка", "Выберите строку для удаления")
@@ -315,7 +341,6 @@ class ViolationDatabaseApp(QMainWindow):
         row_index = self.table.selectionModel().selectedRows()[0].row()
         selected_id = self.table.item(row_index, 0).text()
         
-        # Удаление из БД
         try:
             logging.info(f"Удаление записи с ID: {selected_id}")
             conn = sqlite3.connect('violations.db', timeout=5)
@@ -324,7 +349,6 @@ class ViolationDatabaseApp(QMainWindow):
             conn.commit()
             conn.close()
             
-            # Удаление из таблицы
             self.table.removeRow(row_index)
             QMessageBox.information(self, "Успех", "Запись удалена")
             logging.info("Запись успешно удалена")
@@ -336,38 +360,54 @@ class ViolationDatabaseApp(QMainWindow):
             QMessageBox.critical(self, "Ошибка", "Ошибка удаления")
     
     def search_records(self):
-        """Поиск по полям с фильтрацией через SQL"""
-        criteria = {}
-        for field in ['brand', 'car_number', 'violation_date', 'name', 'violation_type', 'invoice_number']:
-            if hasattr(self, f"{field}_input"):
-                val = getattr(self, f"{field}_input").text()
-                if val:
-                    criteria[field] = val
         
-        logging.info(f"Поиск по критериям: {criteria}")
-        # Формируем запрос
+        """
+        Формирует SQL-запрос с условиями LIKE для каждого заполненного поля
+        и отображает найденные записи в таблице.
+        """""
+
         query = "SELECT * FROM violations WHERE 1=1"
         params = []
-        for field, val in criteria.items():
-            query += f" AND {field} LIKE ?"
-            params.append(f"%{val}%")
-        
-        # Выполняем запрос
+
+        fields = {
+            "brand": self.brand_input,
+            "car_number": self.car_input,
+            "violation_date": self.date_input,
+            "name": self.name_input,
+            "violation_type": self.type_input,
+            "invoice_number": self.invoice_input
+        }
+
+        for db_field, widget in fields.items():
+            value = widget.text().strip()
+            if value:
+                query += f" AND {db_field} LIKE ?"
+                params.append(f"%{value}%")
+
+        logging.info(f"Поиск SQL: {query}")
+        logging.info(f"Параметры: {params}")
+
         try:
-            conn = sqlite3.connect('violations.db', timeout=5)
-            c = conn.cursor()
-            c.execute(query, params)
-            results = c.fetchall()
+            conn = sqlite3.connect("violations.db", timeout=5)
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            results = cursor.fetchall()
             conn.close()
-            
-            # Отображаем результаты
+
             self.display_results(results)
+
         except sqlite3.Error as e:
-            logging.error(f"Ошибка при выполнении поиска: {str(e)}")
-            QMessageBox.critical(self, "Ошибка", f"Не удалось выполнить поиск: {str(e)}")
-    
+            logging.error(f"Ошибка поиска: {e}")
+            QMessageBox.critical(self, "Ошибка", f"Ошибка поиска:\n{e}")
+
     def display_results(self, results):
-        """Отображение результатов поиска в таблицу"""
+        
+        """
+        Отображение результатов поиска в таблицу
+
+        :param results: Список кортежей с записями, полученными из базы данных
+        """
+
         if not results:
             logging.warning("Нет результатов поиска")
             QMessageBox.warning(self, "Результаты", "Не найдено записей")
@@ -381,15 +421,20 @@ class ViolationDatabaseApp(QMainWindow):
                 self.table.setItem(i, j, QTableWidgetItem(str(col)))
     
     def sort_records(self):
-        """Сортировка по дате (пример)"""
-        column = self.table.horizontalHeader().logicalIndex(2)  # Индекс столбца "Дата"
         
-        # Проверяем, что столбец существует
+        """
+        Выполняет сортировку записей по дате нарушения
+        и обновляет содержимое таблицы.
+        """
+
+        column = self.table.horizontalHeader().logicalIndex(2) 
+        
+        # Существует ли данные
         if column == -1:
             logging.warning("Не найден столбец для сортировки")
             return
         
-        # Сортировка по дате
+        # Сортировка
         try:
             conn = sqlite3.connect('violations.db', timeout=5)
             c = conn.cursor()
@@ -408,7 +453,14 @@ class ViolationDatabaseApp(QMainWindow):
             QMessageBox.critical(self, "Ошибка", f"Не удалось отсортировать: {str(e)}")
     
     def edit_record(self):
-        """Редактирование через выбор строки и диалоговое окно"""
+        
+        """
+        Открывает диалоговое окно для редактирования выбранной записи.
+
+        Получает данные выбранной строки таблицы, заполняет поля диалога
+        и передаёт обновлённые значения в метод update_record.
+        """
+
         if not self.table.selectionModel().hasSelection():
             logging.warning("Попытка редактирования без выбора строки")
             QMessageBox.warning(self, "Ошибка", "Выберите строку для редактирования")
@@ -417,12 +469,11 @@ class ViolationDatabaseApp(QMainWindow):
         row_index = self.table.selectionModel().selectedRows()[0].row()
         record = self.get_record_from_row(row_index)
         
-        # Открываем диалог для редактирования
+        # Открываем для редактирования
         dialog = QDialog(self)
         dialog.setWindowTitle("Редактировать нарушение")
         layout = QVBoxLayout()
         
-        # Ввод данных
         fields = [
             ("Марка:", QLineEdit(record['brand'])),
             ("Номер:", QLineEdit(record['car_number'])),
@@ -456,7 +507,15 @@ class ViolationDatabaseApp(QMainWindow):
             logging.info("Запись успешно обновлена")
     
     def update_record(self, record, fields):
-        """Обновление записи в БД"""
+        
+        """
+        Docstring для update_record:
+        Обновляет запись о нарушении ПДД в базе данных.
+
+        :param record: Словарь с текущими данными записи, содержащий как минимум ключ 'id'
+        :param fields: Список UI-элементов, из которых извлекаются новые значения полей
+        """
+
         try:
             logging.info(f"Обновление записи с ID: {record['id']}")
             conn = sqlite3.connect('violations.db', timeout=5)
@@ -470,42 +529,51 @@ class ViolationDatabaseApp(QMainWindow):
             
             # Получаем обновленные данные
             new_data = [field[1].text() for field in fields]
-            new_data.append(str(record['id']))  # ID записи
+            new_data.append(str(record['id']))
             
             # Выполняем обновление
             c.execute(update_query, new_data)
             conn.commit()
             conn.close()
             logging.info("Запись обновлена")
+
         except sqlite3.Error as e:
             logging.error(f"Ошибка при обновлении записи: {str(e)}")
             QMessageBox.critical(self, "Ошибка", f"Не удалось обновить запись: {str(e)}")
+            
         except Exception as e:
             logging.exception("Неожиданная ошибка при обновлении")
             QMessageBox.critical(self, "Ошибка", "Ошибка при обновлении записи")
     
     def get_record_from_row(self, row_index):
-        """Получение записи из строки таблицы"""
-        conn = sqlite3.connect('violations.db', timeout=5)
+        
+        """
+        Docstring для get_record_from_row
+        Возвращает запись о нарушении из базы данных по индексу строки.
+
+        :param row_index: Индекс записи в результирующем списке (нумерация с 0)
+        :return: Словарь с данными о нарушении ПДД
+        """
+
+        conn = sqlite3.connect('violations.db')
         c = conn.cursor()
+
         c.execute("SELECT * FROM violations")
         records = c.fetchall()
         conn.close()
-        
-        for record in records:
-            if record[0] == row_index:  # ID совпадает с индексом строки
-                return {
-                    'id': record[0],
-                    'brand': record[1],
-                    'car_number': record[2],
-                    'violation_date': record[3],
-                    'name': record[4],
-                    'violation_type': record[5],
-                    'invoice_number': record[6],
-                    'payment_amount': record[7]
-                }
-        
-        return None
+
+        record = records[row_index]
+
+        return {
+            'id': record[0],
+            'brand': record[1],
+            'car_number': record[2],
+            'violation_date': record[3],
+            'name': record[4],
+            'violation_type': record[5],
+            'invoice_number': record[6],
+            'payment_amount': record[7]
+        }
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
