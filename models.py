@@ -1,6 +1,6 @@
-from database import database 
- 
-@database
+from dataclasses import dataclass
+
+@dataclass
 class Violations:
     id: int | None
     brand: str

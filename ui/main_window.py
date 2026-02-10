@@ -1,0 +1,126 @@
+from PyQt6.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
+    QTableWidgetItem, QHeaderView, QPushButton, QMessageBox, QLabel
+)
+from PyQt6.QtCore import Qt
+from database import Database
+from ui.dialogs import ViolationDialog
+from models import Violations
+
+
+class ViolationDatabaseApp(QMainWindow):
+    """Главное окно приложения регистрации нарушений ПДД"""
+
+    def __init__(self):
+        super().__init__()
+        self.db = Database()
+
+        self.setWindowTitle("Регистрация нарушителей ПДД")
+        self.setGeometry(100, 100, 1000, 600)
+
+        self._init_ui()
+        self.load_data()
+
+    # ================= UI =================
+
+    def _init_ui(self):
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+
+        title = QLabel("Список нарушений ПДД")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 20px; font-weight: bold;")
+        main_layout.addWidget(title)
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels([
+            "ID", "Марка", "Номер", "Дата",
+            "ФИО", "Тип нарушения", "Квитанция", "Сумма"
+        ])
+        self.table.hideColumn(0)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        main_layout.addWidget(self.table)
+
+        btn_layout = QHBoxLayout()
+
+        self.btn_add = QPushButton("Добавить")
+        self.btn_edit = QPushButton("Изменить")
+        self.btn_delete = QPushButton("Удалить")
+
+        self.btn_add.clicked.connect(self.add_record)
+        self.btn_edit.clicked.connect(self.edit_record)
+        self.btn_delete.clicked.connect(self.delete_record)
+
+        btn_layout.addWidget(self.btn_add)
+        btn_layout.addWidget(self.btn_edit)
+        btn_layout.addWidget(self.btn_delete)
+
+        main_layout.addLayout(btn_layout)
+
+    # ================= DATA =================
+
+    def load_data(self):
+        records = self.db.fetch_all()
+        self.table.setRowCount(len(records))
+
+        for row, v in enumerate(records):
+            self._insert_row(row, v)
+
+    def _insert_row(self, row: int, v: Violations):
+        self.table.setItem(row, 0, QTableWidgetItem(str(v.id)))
+        self.table.setItem(row, 1, QTableWidgetItem(v.brand))
+        self.table.setItem(row, 2, QTableWidgetItem(v.car_number))
+        self.table.setItem(row, 3, QTableWidgetItem(v.violation_date))
+        self.table.setItem(row, 4, QTableWidgetItem(v.name))
+        self.table.setItem(row, 5, QTableWidgetItem(v.violation_type))
+        self.table.setItem(row, 6, QTableWidgetItem(v.invoice_number))
+        self.table.setItem(row, 7, QTableWidgetItem(str(v.payment_amount)))
+
+    # ================= ACTIONS =================
+
+    def add_record(self):
+        dialog = ViolationDialog(self)
+        if dialog.exec():
+            try:
+                self.db.insert(dialog.get_data())
+                self.load_data()
+            except Exception as e:
+                QMessageBox.critical(self, "Ошибка", str(e))
+
+    def edit_record(self):
+        row = self.table.currentRow()
+        if row == -1:
+            QMessageBox.warning(self, "Ошибка", "Выберите запись")
+            return
+
+        record_id = int(self.table.item(row, 0).text())
+        violation = self.db.fetch_by_id(record_id)
+
+        dialog = ViolationDialog(self, violation)
+        if dialog.exec():
+            updated = dialog.get_data()
+            updated.id = record_id
+            try:
+                self.db.update(updated)
+                self.load_data()
+            except Exception as e:
+                QMessageBox.critical(self, "Ошибка", str(e))
+
+    def delete_record(self):
+        row = self.table.currentRow()
+        if row == -1:
+            QMessageBox.warning(self, "Ошибка", "Выберите запись")
+            return
+
+        record_id = int(self.table.item(row, 0).text())
+        if QMessageBox.question(
+            self, "Подтверждение",
+            "Удалить выбранную запись?"
+        ) == QMessageBox.StandardButton.Yes:
+            self.db.delete(record_id)
+            self.load_data()

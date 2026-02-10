@@ -27,7 +27,19 @@ class Database:
         with self.connect() as conn:
             rows = conn.execute("SELECT * FROM violations").fetchall()
             return [Violations(*row) for row in rows]
-    
+
+    def fetch_by_id(self, record_id: int):
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM violations WHERE id = ?",
+                (record_id,)
+            ).fetchone()
+
+            if not row:
+                return None
+
+            return Violations(*row)
+
     def insert(self, v: Violations):
         with self.connect() as conn:
             conn.execute("""
@@ -38,7 +50,8 @@ class Database:
                   v.invoice_number, v.payment_amount))
         
     def delete(self, record_id: int):
-        with  self.connect() as conn:
-            conn.execute("""
-            DELETE FROM violations where id = ?
-            """, (record_id))
+        with self.connect() as conn:
+            conn.execute(
+                "DELETE FROM violations WHERE id = ?",
+                (record_id,)
+            )
