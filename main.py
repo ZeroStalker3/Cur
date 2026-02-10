@@ -424,17 +424,20 @@ class ViolationDatabaseApp(QMainWindow):
 
         :param results: Список кортежей с записями, полученными из базы данных
         """
-
+        
         if not results:
             logging.warning("Нет результатов поиска")
             QMessageBox.warning(self, "Результаты", "Не найдено записей")
             return
-
+        
         logging.info(f"Найдено {len(results)} записей")
         self.table.setRowCount(0)
+        self.table.setColumnCount(8)  # ← ДОБАВИТЬ ЭТУ СТРОКУ
         for i, row in enumerate(results):
             self.table.insertRow(i)
+            # Добавляем ID в скрытый первый столбец
             self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
+            # Остальные данные в видимые столбцы
             for j, col in enumerate(row[1:]):
                 self.table.setItem(i, j + 1, QTableWidgetItem(str(col)))
     
@@ -452,7 +455,6 @@ class ViolationDatabaseApp(QMainWindow):
             logging.warning("Не найден столбец для сортировки")
             return
         
-        # Сортировка
         try:
             conn = sqlite3.connect('violations.db', timeout=5)
             c = conn.cursor()
@@ -462,7 +464,7 @@ class ViolationDatabaseApp(QMainWindow):
             
             # Обновление таблицы
             self.table.setRowCount(len(rows))
-            self.table.setRowCount(len(rows))
+            self.table.setColumnCount(8)  # ← ДОБАВИТЬ ЭТУ СТРОКУ
             for i, row in enumerate(rows):
                 # Добавляем ID в скрытый первый столбец
                 self.table.setItem(i, 0, QTableWidgetItem(str(row[0])))
@@ -470,6 +472,7 @@ class ViolationDatabaseApp(QMainWindow):
                 for j, col in enumerate(row[1:]):
                     self.table.setItem(i, j + 1, QTableWidgetItem(str(col)))
             logging.info("Таблица отсортирована по дате")
+
         except sqlite3.Error as e:
             logging.error(f"Ошибка при сортировке: {str(e)}")
             QMessageBox.critical(self, "Ошибка", f"Не удалось отсортировать: {str(e)}")
