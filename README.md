@@ -57,12 +57,19 @@ python main.py
 
 ## 📂Структура проекта
     Cur/
-    ├── main.py              # Основной файл приложения
-    ├── requirements.txt     # Зависимости проекта
-    ├── install_lib.bat      # Скрипт установки для Windows
-    ├── .gitignore           # Файлы для игнорирования Git'ом
-    ├── README.md            # Этот файл
-    └── Log_app.log          # Логи приложения (создаётся автоматически)
+    ├── main.py              # Точка входа (короткий файл)
+    ├── config.py            # Константы и настройки
+    ├── database.py          # Работа с SQLite
+    ├── models.py            # Модели данных
+    ├── ui/
+    │   ├── __init__.py
+    │   ├── main_window.py   # Главное окно
+    │   └── dialogs.py       # Диалоговые окна
+    ├── requirements.txt
+    ├── install_lib.bat
+    ├── .gitignore
+    ├── README.md
+    └── Log_app.log
 
 
 ## 🎯 Использование
