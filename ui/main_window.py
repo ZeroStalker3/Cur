@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
-    QTableWidgetItem, QHeaderView, QPushButton, QMessageBox, QLabel
+    QTableWidgetItem, QHeaderView, QPushButton, QMessageBox, QLabel, QLineEdit
 )
 from PyQt6.QtCore import Qt
 from database import Database
@@ -33,6 +33,22 @@ class ViolationDatabaseApp(QMainWindow):
         title.setStyleSheet("font-size: 20px; font-weight: bold;")
         main_layout.addWidget(title)
 
+        self.search_inputs = {}
+
+        for field, label in {
+            "brand": "Марка",
+            "car_number": "Номер",
+            "violation_date": "Дата",
+            "name": "ФИО",
+            "violation_type": "Тип",
+            "invoice_number": "Квитанция"
+        }.items():
+            edit = QLineEdit()
+            self.search_inputs[field] = edit
+            main_layout.addWidget(QLabel(label))
+            main_layout.addWidget(edit)
+
+
         self.table = QTableWidget()
         self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels([
@@ -50,14 +66,20 @@ class ViolationDatabaseApp(QMainWindow):
 
         self.btn_add = QPushButton("Добавить")
         self.btn_edit = QPushButton("Изменить")
+        self.btn_sorted = QPushButton("Сортировка")
+        self.btn_search = QPushButton("Поиск")
         self.btn_delete = QPushButton("Удалить")
 
         self.btn_add.clicked.connect(self.add_record)
         self.btn_edit.clicked.connect(self.edit_record)
+        self.btn_sorted.clicked.connect(self.sorted_record)
+        self.btn_search.clicked.connect(self.search_record)
         self.btn_delete.clicked.connect(self.delete_record)
 
         btn_layout.addWidget(self.btn_add)
         btn_layout.addWidget(self.btn_edit)
+        btn_layout.addWidget(self.btn_sorted)
+        btn_layout.addWidget(self.btn_search)
         btn_layout.addWidget(self.btn_delete)
 
         main_layout.addLayout(btn_layout)
@@ -110,6 +132,26 @@ class ViolationDatabaseApp(QMainWindow):
                 self.load_data()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", str(e))
+
+    def search_records(self):
+        filters = {
+            field: edit.text().strip()
+            for field, edit in self.search_inputs.items()
+        }
+
+        results = self.db.search(filters)
+
+        self.table.setRowCount(len(results))
+        for row, v in enumerate(results):
+            self._insert_row(row, v)
+
+    def sorted_record(self):
+        results = self.db.sort_by_date()
+
+        self.table.setRowCount(len(results))
+        for row, v in enumerate(results):
+            self._insert_row(row, v)
+        
 
     def delete_record(self):
         row = self.table.currentRow()

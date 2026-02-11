@@ -49,6 +49,29 @@ class Database:
             """, (v.brand, v.car_number, v.violation_date, v.name, v.violation_type,
                   v.invoice_number, v.payment_amount))
         
+    def search(self, filters: dict):
+        query = "SELECT * FROM violations WHERE 1=1"
+        params = []
+
+        for field, value in filters.items():
+            if value:
+                query += f" AND {field} LIKE ?"
+                params.append(f"%{value}%")
+
+        with self.connect() as conn:
+            rows = conn.execute(query, params).fetchall()
+            return [Violations(*row) for row in rows]
+
+    def fetch_sorted(self, ascending: bool = True):
+        order = "ASC" if ascending else "DESC"
+
+        with self.connect() as conn:
+            rows = conn.execute(
+                f"SELECT * FROM violations ORDER BY violation_date {order}"
+            ).fetchall()
+
+            return [Violations(*row) for row in rows]
+
     def delete(self, record_id: int):
         with self.connect() as conn:
             conn.execute(
