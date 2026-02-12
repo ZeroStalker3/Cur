@@ -21,7 +21,7 @@ class ViolationDatabaseApp(QMainWindow):
         self.db = Database()
 
         self.setWindowTitle("Регистрация нарушителей ПДД")
-        self.setGeometry(100, 100, 600, 600)
+        self.setGeometry(100, 100, 800, 600)
         
         # Расположение по центру
         qr = self.frameGeometry()
@@ -94,7 +94,6 @@ class ViolationDatabaseApp(QMainWindow):
         btn_layout.addWidget(self.btn_delete)
 
         main_layout.addLayout(btn_layout)
-
 
     # ================= DATA =================
 
