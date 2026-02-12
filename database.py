@@ -1,5 +1,5 @@
 import sqlite3
-import logging
+#import logging
 from config import DB_name
 from models import Violations
 from PyQt6.QtWidgets import QMessageBox
@@ -54,7 +54,7 @@ class Database:
         
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e):
-                logging.error("Ошибка: База данных заблокирована")
+                #logging.error("Ошибка: База данных заблокирована")
                 QMessageBox.critical(self, "Ошибка", "База данных заблокирована. Повторите позже.")
         
     def search(self, filters: dict):
