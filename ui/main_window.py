@@ -73,7 +73,7 @@ class ViolationDatabaseApp(QMainWindow):
         self.btn_add.clicked.connect(self.add_record)
         self.btn_edit.clicked.connect(self.edit_record)
         self.btn_sorted.clicked.connect(self.sorted_record)
-        self.btn_search.clicked.connect(self.search_record)
+        self.btn_search.clicked.connect(self.search_records)
         self.btn_delete.clicked.connect(self.delete_record)
 
         btn_layout.addWidget(self.btn_add)
@@ -146,7 +146,7 @@ class ViolationDatabaseApp(QMainWindow):
             self._insert_row(row, v)
 
     def sorted_record(self):
-        results = self.db.sort_by_date()
+        results = self.db.fetch_sorted()
 
         self.table.setRowCount(len(results))
         for row, v in enumerate(results):

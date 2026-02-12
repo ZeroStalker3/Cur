@@ -2,6 +2,8 @@ import sqlite3
 import logging
 from config import DB_name
 from models import Violations
+from PyQt6.QtWidgets import QMessageBox
+
 
 class Database:
     def __init__(self):
@@ -41,13 +43,19 @@ class Database:
             return Violations(*row)
 
     def insert(self, v: Violations):
-        with self.connect() as conn:
-            conn.execute("""
-            INSERT INTO violations (brand, car_number, violation_date, name, 
-                violation_type, invoice_number, payment_amount)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (v.brand, v.car_number, v.violation_date, v.name, v.violation_type,
-                  v.invoice_number, v.payment_amount))
+        try:
+            with self.connect() as conn:
+                conn.execute("""
+                INSERT INTO violations (brand, car_number, violation_date, name, 
+                    violation_type, invoice_number, payment_amount)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (v.brand, v.car_number, v.violation_date, v.name, v.violation_type,
+                    v.invoice_number, v.payment_amount))
+        
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e):
+                logging.error("Ошибка: База данных заблокирована")
+                QMessageBox.critical(self, "Ошибка", "База данных заблокирована. Повторите позже.")
         
     def search(self, filters: dict):
         query = "SELECT * FROM violations WHERE 1=1"
@@ -78,3 +86,11 @@ class Database:
                 "DELETE FROM violations WHERE id = ?",
                 (record_id,)
             )
+
+    def update(self, v: Violations):
+        with self.connect() as conn:
+            conn.execute("""
+                UPDATE violations SET brand = ?, car_number = ?, violation_date = ?, name = ?, 
+                        violation_type = ?, invoice_number = ?, payment_amount = ? WHERE id = ?"""
+                        , (v.brand, v.car_number, v.violation_date, v.name, v.violation_type,
+                           v.invoice_number, v.payment_amount, v.id))
