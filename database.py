@@ -3,13 +3,16 @@ import sqlite3
 from config import DB_name
 from models import Violations
 from PyQt6.QtWidgets import QMessageBox
-
+import logging
 
 class Database:
     def __init__(self):
         self.init_db()
 
     def connect(self):
+        logger = logging.getLogger(__name__)
+        logger.info(f"Иниициализация базы данных {DB_name}")
+        
         return sqlite3.connect(DB_name, timeout=5)
     
     def init_db(self):
@@ -51,10 +54,15 @@ class Database:
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (v.brand, v.car_number, v.violation_date, v.name, v.violation_type,
                     v.invoice_number, v.payment_amount))
+                
+                logger = logging.getLogger(__name__)
+                logger.info("Сохранение данных в базу")
         
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e):
-                #logging.error("Ошибка: База данных заблокирована")
+                logger = logging.getLogger(__name__)
+                logger.error(f"Ошибка: База данных заблокирована {e}")
+
                 QMessageBox.critical(self, "Ошибка", "База данных заблокирована. Повторите позже.")
         
     def search(self, filters: dict):
@@ -69,6 +77,9 @@ class Database:
         with self.connect() as conn:
             rows = conn.execute(query, params).fetchall()
             return [Violations(*row) for row in rows]
+
+        logger = logging.getLogger(__name__)        
+        logger.info("Попытка поиска данных")
 
     def fetch_sorted(self, ascending: bool = True):
         order = "ASC" if ascending else "DESC"
@@ -86,6 +97,9 @@ class Database:
                 "DELETE FROM violations WHERE id = ?",
                 (record_id,)
             )
+            logger = logging.getLogger(__name__)
+            logger.info(f"Попытка удаления {record_id}")
+                
 
     def update(self, v: Violations):
         with self.connect() as conn:
@@ -94,3 +108,5 @@ class Database:
                         violation_type = ?, invoice_number = ?, payment_amount = ? WHERE id = ?"""
                         , (v.brand, v.car_number, v.violation_date, v.name, v.violation_type,
                            v.invoice_number, v.payment_amount, v.id))
+            logger = logging.getLogger(__name__)
+            logger.info(f"Обновление записи - {v.id}")

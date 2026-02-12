@@ -1,9 +1,11 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 from ui.main_window import ViolationDatabaseApp
-
+from config_logging import setup_logging
 
 def main():
+    setup_logging()
+    
     app = QApplication(sys.argv)
     window = ViolationDatabaseApp()
     window.show()

@@ -66,7 +66,8 @@ python main.py
     │   ├── main_window.py   # Главное окно
     │   └── dialogs.py       # Диалоговые окна
     ├── requirements.txt
-    ├── install_lib.bat
+    ├── install_lib.bat      # Установщик библиотек
+    ├── logging.py           # Файл для логирования
     ├── .gitignore
     ├── README.md
     └── Log_app.log

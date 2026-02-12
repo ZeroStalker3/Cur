@@ -2,10 +2,11 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTableWidget,
     QTableWidgetItem, QHeaderView, QPushButton, QMessageBox, QLabel, QLineEdit
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from database import Database
 from ui.dialogs import ViolationDialog
 from models import Violations
+import logging
 
 
 class ViolationDatabaseApp(QMainWindow):
@@ -13,10 +14,20 @@ class ViolationDatabaseApp(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        logger = logging.getLogger(__name__)
+        logger.info("Запуск приложения")
+
         self.db = Database()
 
         self.setWindowTitle("Регистрация нарушителей ПДД")
-        self.setGeometry(100, 100, 1000, 600)
+        self.setGeometry(100, 100, 600, 600)
+        
+        # Расположение по центру
+        qr = self.frameGeometry()
+        cp = self.screen().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
         self._init_ui()
         self.load_data()
@@ -84,6 +95,7 @@ class ViolationDatabaseApp(QMainWindow):
 
         main_layout.addLayout(btn_layout)
 
+
     # ================= DATA =================
 
     def load_data(self):
@@ -111,12 +123,17 @@ class ViolationDatabaseApp(QMainWindow):
             try:
                 self.db.insert(dialog.get_data())
                 self.load_data()
+                logger = logging.getLogger(__name__)
+                logger.info("Добавление записи")
             except Exception as e:
+                logger.warning(f"Ошибка: {e}")
                 QMessageBox.critical(self, "Ошибка", str(e))
 
     def edit_record(self):
+        logger = logging.getLogger(__name__)
         row = self.table.currentRow()
         if row == -1:
+            logger.warning("Попытка изменения без выбранной записи")
             QMessageBox.warning(self, "Ошибка", "Выберите запись")
             return
 
@@ -130,10 +147,13 @@ class ViolationDatabaseApp(QMainWindow):
             try:
                 self.db.update(updated)
                 self.load_data()
+                logger.info("Пользователь изменяет запись {record_id}")
             except Exception as e:
+                logger.warning(f"Ошибка {e}")
                 QMessageBox.critical(self, "Ошибка", str(e))
 
     def search_records(self):
+        logger = logging.getLogger(__name__)
         filters = {
             field: edit.text().strip()
             for field, edit in self.search_inputs.items()
@@ -144,18 +164,23 @@ class ViolationDatabaseApp(QMainWindow):
         self.table.setRowCount(len(results))
         for row, v in enumerate(results):
             self._insert_row(row, v)
+            logger.info(f"Пользователь ищет {results}")
 
     def sorted_record(self):
+        logger = logging.getLogger(__name__)
         results = self.db.fetch_sorted()
 
         self.table.setRowCount(len(results))
         for row, v in enumerate(results):
             self._insert_row(row, v)
+            logger.info("Пользователь выполняет сортировку")
         
 
     def delete_record(self):
+        logger = logging.getLogger(__name__)
         row = self.table.currentRow()
         if row == -1:
+            logger.warning(f"Ошибка, не выбрана запись")
             QMessageBox.warning(self, "Ошибка", "Выберите запись")
             return
 
@@ -166,3 +191,4 @@ class ViolationDatabaseApp(QMainWindow):
         ) == QMessageBox.StandardButton.Yes:
             self.db.delete(record_id)
             self.load_data()
+            logger.info(f"Запись {record_id} удалена")
