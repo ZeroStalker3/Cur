@@ -11,7 +11,7 @@ class Database:
 
     def connect(self):
         logger = logging.getLogger(__name__)
-        logger.info(f"Иниициализация базы данных {DB_name}")
+        #logger.info(f"Иниициализация базы данных {DB_name}")
         
         return sqlite3.connect(DB_name, timeout=5)
     

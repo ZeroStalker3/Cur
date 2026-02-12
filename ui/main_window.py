@@ -147,7 +147,7 @@ class ViolationDatabaseApp(QMainWindow):
             try:
                 self.db.update(updated)
                 self.load_data()
-                logger.info("Пользователь изменяет запись {record_id}")
+                logger.info(f"Пользователь изменяет запись {record_id}")
             except Exception as e:
                 logger.warning(f"Ошибка {e}")
                 QMessageBox.critical(self, "Ошибка", str(e))
