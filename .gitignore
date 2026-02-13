@@ -3,3 +3,4 @@
 /__pycache__
 /*.db
 /ui/__pycache__
+/styles/__pycache__
