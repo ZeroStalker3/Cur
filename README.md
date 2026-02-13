@@ -65,6 +65,9 @@ python main.py
     │   ├── __init__.py
     │   ├── main_window.py   # Главное окно
     │   └── dialogs.py       # Диалоговые окна
+    ├── styles/
+    │   ├── style_loader.py  
+    │   └── style.qss        # Стиль элементов
     ├── requirements.txt
     ├── install_lib.bat      # Установщик библиотек
     ├── logging.py           # Файл для логирования
