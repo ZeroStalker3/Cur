@@ -2,9 +2,11 @@ import sys
 from PyQt6.QtWidgets import QApplication
 from ui.main_window import ViolationDatabaseApp
 from styles.style_loader import load_style
+from config_logging import setup_logging
 
 def main():
-    
+    setup_logging()
+
     app = QApplication(sys.argv)
 
     app.setStyleSheet(load_style())
