@@ -34,7 +34,6 @@ class ViolationDialog(QDialog):
 
         for field, label in self.FIELD_LABELS.items():
             layout.addWidget(QLabel(label))
-
             if field == "violation_date":
                 edit = QDateEdit()
                 edit.setDisplayFormat("yyyy-MM-dd")

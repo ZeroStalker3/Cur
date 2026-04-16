@@ -117,12 +117,12 @@ class ViolationDatabaseApp(QMainWindow):
     # ================= ACTIONS =================
 
     def add_record(self):
+        logger = logging.getLogger(__name__)
         dialog = ViolationDialog(self)
         if dialog.exec():
             try:
                 self.db.insert(dialog.get_data())
                 self.load_data()
-                logger = logging.getLogger(__name__)
                 logger.info("Добавление записи")
             except Exception as e:
                 logger.warning(f"Ошибка: {e}")
