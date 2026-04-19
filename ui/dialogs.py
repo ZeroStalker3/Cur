@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QDateEdit,
+    QMessageBox,
 )
 from PyQt6.QtCore import QDate
 from PyQt6.QtGui import QDoubleValidator
@@ -58,6 +59,28 @@ class ViolationDialog(QDialog):
         btn = QPushButton("Сохранить")
         btn.clicked.connect(self.accept)
         layout.addWidget(btn)
+
+    def accept(self):
+        data = self.get_data()
+        
+        check_fields = [
+            (data.brand, "Марка автомобиля"),
+            (data.car_number, "Гос. номер"),
+            (data.name, "ФИО"),
+            (data.violation_type, "Тип нарушения"),
+            (data.invoice_number, "Номер квитанции")
+        ]
+        
+        for value, field_name in check_fields:
+            if not value: # Если строка пустая после strip()
+                QMessageBox.warning(self, "Ошибка валидации", f"Поле '{field_name}' не может быть пустым!")
+                return # Прерываем закрытие диалога
+
+        if data.payment_amount <= 0:
+            QMessageBox.warning(self, "Ошибка валидации", "Сумма штрафа должна быть больше нуля!")
+            return
+
+        super().accept()
 
     def get_data(self) -> Violations:
         return Violations(
