@@ -83,6 +83,12 @@ class ViolationDialog(QDialog):
         super().accept()
 
     def get_data(self) -> Violations:
+        try:
+            payment_value = float(self.inputs["payment_amount"].text() or 0)
+        except ValueError:
+            QMessageBox.warning(self, "Ошибка валидации", "Сумма штрафа должна быть числом!")
+            raise ValueError("Некорректная сумма штрафа")
+        
         return Violations(
             id=None,
             brand=self.inputs["brand"].text().strip(),
@@ -93,7 +99,5 @@ class ViolationDialog(QDialog):
             name=self.inputs["name"].text().strip(),
             violation_type=self.inputs["violation_type"].text().strip(),
             invoice_number=self.inputs["invoice_number"].text().strip(),
-            payment_amount=float(
-                self.inputs["payment_amount"].text() or 0
-            )
+            payment_amount=payment_value
         )
