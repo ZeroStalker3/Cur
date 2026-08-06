@@ -163,16 +163,16 @@ class ViolationDatabaseApp(QMainWindow):
         self.table.setRowCount(len(results))
         for row, v in enumerate(results):
             self._insert_row(row, v)
-            logger.info(f"Пользователь ищет {results}")
+        logger.info(f"Пользователь выполняет поиск")
 
     def sorted_record(self):
         logger = logging.getLogger(__name__)
-        results = self.db.fetch_sorted()
+        results = self.db.fetch_sorted(ascending=True)
 
         self.table.setRowCount(len(results))
         for row, v in enumerate(results):
             self._insert_row(row, v)
-            logger.info("Пользователь выполняет сортировку")
+        logger.info("Пользователь выполняет сортировку")
         
 
     def delete_record(self):
